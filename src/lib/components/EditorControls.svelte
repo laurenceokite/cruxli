@@ -2,11 +2,21 @@
 	import { createInputDispatcher } from '../commands';
 	import { MAX_GRID_SIZE, MIN_GRID_SIZE } from '$lib/crossword';
 	import type { Crossword } from '$lib/types';
-	import { FlipVertical, List, Blocks, TextCursorInput, Save, FileUp } from 'lucide-svelte';
+	import {
+		FlipVertical,
+		List,
+		Blocks,
+		TextCursorInput,
+		Save,
+		FileUp,
+		Undo2,
+		Redo2
+	} from 'lucide-svelte';
 	import Switch from './ui/switch.svelte';
 	import Button from './ui/button.svelte';
 	import Input from './ui/input.svelte';
 	import Toggle from './ui/toggle.svelte';
+
 	export let crossword: Readonly<Crossword>;
 	export let autoSymmetry: boolean;
 	export let isGridDesigner: boolean;
@@ -36,20 +46,20 @@
 		<fieldset class="flex gap-1 xl:gap-2">
 			<Button
 				type="button"
-				class="px-2 xl:px-4"
+				variant="secondary"
 				on:click={() => dispatch('undo')}
 				disabled={!undoable}
 			>
-				Undo
+				<Undo2 />
 			</Button>
 
 			<Button
 				type="button"
-				class="px-2 xl:px-4 text-sm"
+				variant="secondary"
 				on:click={() => dispatch('redo')}
 				disabled={!redoable}
 			>
-				Redo
+				<Redo2 />
 			</Button>
 		</fieldset>
 
@@ -66,7 +76,7 @@
 				disabled={!isGridDesigner}
 				aria-label={`Toggle auto-symmetry ${autoSymmetry ? 'off' : 'on'}.`}
 			>
-				<FlipVertical class="h-6 w-6" />
+				<FlipVertical />
 			</Toggle>
 			<Input
 				id="sizeInput"
@@ -83,11 +93,7 @@
 
 	<div class="flex flex-1 flex-nowrap justify-between">
 		{#if isSplit}
-			<Toggle
-				bind:pressed={listView}
-				variant="default"
-				class="bg-white data-[state='on']:bg-blue-100"
-			>
+			<Toggle bind:pressed={listView} class="bg-white data-[state='on']:bg-blue-100">
 				<List class="h-6 w-6" />
 			</Toggle>
 		{:else}
@@ -95,11 +101,11 @@
 		{/if}
 
 		<div class="flex items-center gap-2">
-			<Button type="button">
-				<Save class="h-6 w-6" />
+			<Button type="button" variant="secondary">
+				<Save />
 			</Button>
 			<Button type="button">
-				<FileUp class="h-6 w-6" />
+				<FileUp />
 			</Button>
 		</div>
 	</div>

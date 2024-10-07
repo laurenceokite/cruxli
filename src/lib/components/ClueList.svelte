@@ -47,12 +47,12 @@
 {#each Object.entries(clues) as [orientation, list]}
 	<ul class="w-[650px] min-w-fit max-w-screen shadow-md">
 		<h2
-			class="sticky top-0 h-10 flex items-center px-2 font-semibold bg-white dark:text-white dark:bg-gray-950 border-gray-800 border-b-2 z-50"
+			class="sticky top-0 h-10 flex items-center px-2 font-semibold bg-white dark:text-white dark:bg-gray-950 border-gray-950 dark:border-gray-800 border-b z-50"
 		>
 			{orientation.toUpperCase()}
 		</h2>
 		{#each list as clue, index}
-			<li class:bg-gray-800={!!(index % 2)}>
+			<li class:dark:bg-gray-800={!!(index % 2)}>
 				<ClueInput
 					{clue}
 					{orientation}

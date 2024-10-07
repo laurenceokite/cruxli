@@ -55,9 +55,9 @@
 		<InputGridSquare
 			{square}
 			inputType="checkbox"
-			selected={index === $cursor.index ||
+			highlighted={index === $cursor.index ||
 				(autoSymmetry && index === size ** 2 - $cursor.index - 1)}
-			highlighted={false}
+			selected={false}
 			ariaRowindex={Cursor.y(size, index)}
 			ariaColindex={Cursor.x(size, index)}
 			inputId={getInputId(index)}

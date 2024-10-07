@@ -1,47 +1,17 @@
 <script lang="ts">
 	import { Toggle } from 'bits-ui';
-	import { cn } from '$lib/utils';
 
-	type $$Props = Toggle.Props & {
-		variant?: 'default';
-		size?: 'sm' | 'md';
-	};
+	type $$Props = Toggle.Props;
 	type $$Events = Toggle.Events;
 
 	let className: $$Props['class'] = undefined;
-	export let variant: $$Props['variant'] = 'default';
-	export let size: $$Props['size'] = 'md';
 	export let pressed: $$Props['pressed'] = undefined;
 	export { className as class };
-
-	const baseClass = 'rounded-md';
-
-	function toggleVariants(options: { variant: $$Props['variant']; size: $$Props['size'] }): string {
-		let result = '';
-
-		switch (options.variant) {
-			case 'default':
-				result += 'data-[state=on]:bg-slate-900';
-				break;
-		}
-
-		switch (options.size) {
-			case 'md':
-				result += '';
-				break;
-
-			case 'sm':
-				result += '';
-				break;
-		}
-
-		return result;
-	}
 </script>
 
 <Toggle.Root
 	bind:pressed
-	class={cn(toggleVariants({ variant, size }), baseClass, className)}
+	class="transition-colors duration-300 rounded-md border border-gray-600 p-1 xl:p-2 enabled:dark:data-[state=off]:text-slate-400 bg-transparent data-[state=on]:bg-violet-500/75 hover:enabled:bg-violet-400/75 cursor-pointer disabled:cursor-not-allowed disabled:data-[state]:bg-gray-700/50 disabled:text-gray-800"
 	{...$$restProps}
 	on:click
 >

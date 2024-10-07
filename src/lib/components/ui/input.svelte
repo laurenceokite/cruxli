@@ -15,7 +15,7 @@
 
 <input
 	class={cn(
-		'border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+		'appearance-none bg-transparent dark:bg-gray-950 dark:text-slate-200 placeholder:text-slate-400 flex h-10 w-full rounded-md border border-gray-600 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
 		className
 	)}
 	bind:value

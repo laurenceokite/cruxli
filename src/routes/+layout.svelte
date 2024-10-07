@@ -9,15 +9,15 @@
 
 	function applyDarkMode(mode: boolean | null) {
 		if (!browser) return;
-		switch (mode) {
-			case null:
-				mode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-			case true:
-				document.documentElement.classList.add('dark');
-				break;
-			case false:
-				document.documentElement.classList.remove('dark');
-				break;
+
+		if (mode === null) {
+			mode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		}
+
+		if (mode) {
+			document.documentElement.classList.add('dark');
+		} else {
+			document.documentElement.classList.remove('dark');
 		}
 	}
 

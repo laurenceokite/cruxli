@@ -57,14 +57,14 @@
 	<div
 		class:bg-indigo-300={highlighted}
 		class:bg-violet-400={selected}
-		class:bg-violet-950={selected && !square}
+		class:bg-violet-950={highlighted && !square}
 		class:bg-gray-500={readonly}
-		class="absolute inset-0 pointer-events-none"
+		class="absolute inset-0 pointer-events-none opacity-50"
 	></div>
 	{#if square && square.number && displayNumber}
 		<div
-			class="absolute top-0 left-0 text-[0.4rem] xl:text-[0.5rem] pl-[1px] xl:pl-[2px] dark:text-gray-200"
-			class:dark:text-black={highlighted || selected}
+			class="absolute top-0 left-0 text-[0.4rem] xl:text-[0.5rem] pl-[1px] xl:pl-[2px]"
+			class:dark:text-gray-200={!highlighted && !selected}
 		>
 			{square.number}
 		</div>
@@ -88,13 +88,13 @@
 			value={square.value}
 			type="text"
 			maxlength="6"
-			class="absolute dark:text-slate-300 bg-transparent caret-transparent text-center pt-[2px] pl-[2px] xl:p-0 xl:font-semibold text-sm xl:text-base w-full h-full outline-none peer"
-			class:dark:text-black={highlighted || selected}
+			class="absolute bg-transparent caret-transparent text-center pt-[2px] pl-[2px] xl:p-0 xl:font-semibold text-sm xl:text-base w-full h-full outline-none peer"
+			class:dark:text-slate-300={!highlighted && !selected}
 			{tabindex}
 		/>
 	{/if}
 	<div
-		class="absolute inset-0 peer-focus:ring-4 ring-violet-700 rounded pointer-events-none z-10"
+		class="absolute inset-0 peer-focus:ring-4 ring-violet-800 rounded pointer-events-none z-10"
 	></div>
 	{#if warn}
 		<div class="absolute inset-0 opacity-25 bg-rose-600"></div>

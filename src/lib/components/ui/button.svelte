@@ -3,43 +3,47 @@
 	import { cn } from '$lib/utils.js';
 
 	type $$Props = Button.Props & {
-		variant?: 'default';
-		size: 'sm' | 'md' | 'lg' | 'full';
+		variant?: 'primary' | 'secondary';
+		size?: 'sm' | 'md' | 'lg' | 'full';
 	};
 	type $$Events = Button.Events;
 
 	let className: $$Props['class'] = undefined;
-	export let variant: $$Props['variant'] = 'default';
+	export let variant: $$Props['variant'] = 'primary';
 	export let size: $$Props['size'] = 'md';
 	export let builders: $$Props['builders'] = [];
 	export { className as class };
 
-	function buttonVariants(opts: { variant: $$Props['variant']; size: $$Props['size'] }): string {
-		let result = '';
+	const baseClass =
+		'transition-colors duration-300 rounded-lg cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-800 flex justify-center items-center shadow-sm enabled:shadow-gray-950';
 
-		switch (opts.variant) {
-			case 'default':
-				result += '';
-		}
-
-		switch (opts.size) {
+	function sizeClass(s: $$Props['size']) {
+		switch (s) {
 			case 'sm':
-				result += '';
+				return '';
 			case 'md':
-				result += '';
+				return 'w-[64px] h-[40px]';
 			case 'lg':
-				result += '';
+				return '';
 			case 'full':
-				result += '';
+				return '';
 		}
+	}
 
-		return result;
+	function variantClass(v: $$Props['variant']) {
+		if (v === 'primary') {
+			return 'bg-violet-500 hover:bg-violet-400';
+		}
+		if (v === 'secondary') {
+			return 'bg-gray-950 hover:bg-gray-900 text-slate-300';
+		}
+		return '';
 	}
 </script>
 
 <Button.Root
 	{builders}
-	class={cn(buttonVariants({ variant, size }), className)}
+	class={cn(className, sizeClass(size), variantClass(variant), baseClass)}
 	type="button"
 	{...$$restProps}
 	on:click
