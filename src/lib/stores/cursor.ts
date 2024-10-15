@@ -1,253 +1,248 @@
 import { writable } from "svelte/store";
-import type { Crossword, Square, Orientation } from "../types";
+import type { Crossword, Square, Orientation, Cursor, Direction } from "../types";
 import { Iter } from "../iterators/iter";
 
-const store = writable<{
-  orientation: Orientation;
-  index: number;
-}>({
-  index: 0,
-  orientation: "across",
-});
+export type CursorStore = ReturnType<typeof createCursorStore>;
 
-let crossword: () => Readonly<Crossword> = () => ({}) as Crossword;
+export function createCursorStore(crossword: () => Readonly<Crossword>) {
+    const store = writable<Cursor>({
+        index: 0,
+        orientation: "across",
+    });
 
-function initialize(init: () => Readonly<Crossword>) {
-  crossword = init;
-}
+    function move(direction: Direction, skipBlack: boolean = false) {
+        store.update((cursor) => {
+            const targetOrientation = cursorHelpers.orientation(direction);
 
-function move(direction: Direction, skipBlack: boolean = false) {
-  store.update((cursor) => {
-    const targetOrientation = Cursor.orientation(direction);
+            // Orientation needs to correspond to direction before moving.
+            // Here we update orientation if necessary and return.
+            if (cursor.orientation !== targetOrientation && skipBlack) {
+                return {
+                    ...cursor,
+                    orientation: targetOrientation,
+                };
+            }
 
-    // Orientation needs to correspond to direction before moving.
-    // Here we update orientation if necessary and return.
-    if (cursor.orientation !== targetOrientation && skipBlack) {
-      return {
-        ...cursor,
-        orientation: targetOrientation,
-      };
+            const _crossword = crossword();
+
+            if (cursorHelpers.atBoundary(_crossword.size, cursor.index, direction)) {
+                return cursor;
+            }
+
+            const increment = cursorHelpers.increment(_crossword.size, direction);
+            let index = cursor.index + increment;
+
+            if (index < 0 || index > _crossword.grid.length - 1) {
+                return cursor;
+            }
+
+            if (skipBlack && !_crossword.grid[index]) {
+                for (let i = 0; i < _crossword.grid.length; i++) {
+                    index += increment;
+                    if (index < 0 || index >= _crossword.grid.length) {
+                        return cursor;
+                    }
+                    if (_crossword.grid[index]) {
+                        return {
+                            ...cursor,
+                            index,
+                        };
+                    }
+                }
+            }
+
+            return {
+                ...cursor,
+                index,
+            };
+        });
     }
 
-    const _crossword = crossword();
-
-    if (Cursor.atBoundary(_crossword.size, cursor.index, direction)) {
-      return cursor;
+    function toggleOrientation() {
+        store.update((cursor) => {
+            const orientation = cursorHelpers.opposite(cursor.orientation);
+            return {
+                ...cursor,
+                orientation,
+            };
+        });
     }
 
-    const increment = Cursor.increment(_crossword.size, direction);
-    let index = cursor.index + increment;
-
-    if (index < 0 || index > _crossword.grid.length - 1) {
-      return cursor;
+    function setOrientation(orientation: Orientation) {
+        store.update((cursor) => {
+            if (cursor.orientation === orientation) {
+                return cursor;
+            }
+            return {
+                ...cursor,
+                orientation,
+            };
+        });
     }
 
-    if (skipBlack && !_crossword.grid[index]) {
-      for (let i = 0; i < _crossword.grid.length; i++) {
-        index += increment;
+    function setIndex(index: number) {
+        const _crossword = crossword();
+
         if (index < 0 || index >= _crossword.grid.length) {
-          return cursor;
+            return;
         }
-        if (_crossword.grid[index]) {
-          return {
-            ...cursor,
-            index,
-          };
+
+        store.update((cursor) => {
+            return {
+                ...cursor,
+                index,
+            };
+        });
+    }
+
+    function findEmptySquare(iter: Iter<Square | null>): number | undefined {
+        for (const square of iter) {
+            if (square && square.value.trim() === "") {
+                return square.index;
+            }
         }
-      }
+        return undefined;
+    }
+
+    function goToFirstEmptySquare() {
+        store.update((cursor) => {
+            const iter = new Iter(crossword().grid[Symbol.iterator]());
+            const index = findEmptySquare(
+                cursor.orientation === "across" ? iter : iter.iterateBySqrt(),
+            );
+
+            if (index === undefined) {
+                return cursor;
+            }
+
+            return {
+                ...cursor,
+                index,
+            };
+        });
+    }
+
+    function goToNextEmptySquare(indices?: readonly number[]) {
+        store.update((cursor) => {
+            let index: number | undefined = undefined;
+            const _crossword = crossword();
+
+            if (indices) {
+                const squares = indices
+                    .map((i) => _crossword.grid[i])
+                    .filter((s) => !!s);
+
+                const start =
+                    squares.findIndex((s) => s && s.index === cursor.index) + 1;
+                index = findEmptySquare(
+                    new Iter(squares[Symbol.iterator]()).iterateFrom(start),
+                );
+
+                if (index !== undefined) {
+                    return {
+                        ...cursor,
+                        index,
+                    };
+                }
+            }
+
+            const increment = cursorHelpers.increment(_crossword.size, cursor.orientation);
+            const iter = new Iter(_crossword.grid[Symbol.iterator]()).iterateFrom(
+                cursor.index + increment,
+            );
+            index = findEmptySquare(
+                cursor.orientation === "across" ? iter : iter.iterateBySqrt(),
+            );
+
+            if (index !== undefined) {
+                return {
+                    ...cursor,
+                    index,
+                };
+            }
+
+            return cursor;
+        });
     }
 
     return {
-      ...cursor,
-      index,
+        subscribe: store.subscribe,
+        move,
+        setIndex,
+        toggleOrientation,
+        setOrientation,
+        goToFirstEmptySquare,
+        goToNextEmptySquare,
     };
-  });
 }
 
-function toggleOrientation() {
-  store.update((cursor) => {
-    const orientation = Cursor.opposite(cursor.orientation);
-    return {
-      ...cursor,
-      orientation,
-    };
-  });
-}
-
-function setOrientation(orientation: Orientation) {
-  store.update((cursor) => {
-    if (cursor.orientation === orientation) {
-      return cursor;
-    }
-    return {
-      ...cursor,
-      orientation,
-    };
-  });
-}
-
-function setIndex(index: number) {
-  const _crossword = crossword();
-
-  if (index < 0 || index >= _crossword.grid.length) {
-    return;
-  }
-
-  store.update((cursor) => {
-    return {
-      ...cursor,
-      index,
-    };
-  });
-}
-
-function findEmptySquare(iter: Iter<Square | null>): number | undefined {
-  for (const square of iter) {
-    if (square && square.value.trim() === "") {
-      return square.index;
-    }
-  }
-  return undefined;
-}
-
-function goToFirstEmptySquare() {
-  store.update((cursor) => {
-    const iter = new Iter(crossword().grid[Symbol.iterator]());
-    const index = findEmptySquare(
-      cursor.orientation === "across" ? iter : iter.iterateBySqrt(),
-    );
-
-    if (index === undefined) {
-      return cursor;
-    }
-
-    return {
-      ...cursor,
-      index,
-    };
-  });
-}
-
-function goToNextEmptySquare(indices?: readonly number[]) {
-  store.update((cursor) => {
-    let index: number | undefined = undefined;
-    const _crossword = crossword();
-
-    if (indices) {
-      const squares = indices.map((i) => _crossword.grid[i]).filter((s) => !!s);
-
-      const start = squares.findIndex((s) => s && s.index === cursor.index) + 1;
-      index = findEmptySquare(
-        new Iter(squares[Symbol.iterator]()).iterateFrom(start),
-      );
-
-      if (index !== undefined) {
+export const cursorHelpers = {
+    orientation(direction: Direction): Orientation {
         return {
-          ...cursor,
-          index,
-        };
-      }
-    }
+            ArrowRight: "across",
+            ArrowUp: "down",
+            ArrowDown: "down",
+            ArrowLeft: "across",
+        }[direction] as Orientation;
+    },
 
-    const increment = Cursor.increment(_crossword.size, cursor.orientation);
-    const iter = new Iter(_crossword.grid[Symbol.iterator]()).iterateFrom(
-      cursor.index + increment,
-    );
-    index = findEmptySquare(
-      cursor.orientation === "across" ? iter : iter.iterateBySqrt(),
-    );
+    opposite<T extends Orientation | Direction>(prop: T): T {
+        return {
+            ArrowUp: "ArrowDown",
+            ArrowRight: "ArrowLeft",
+            ArrowDown: "ArrowUp",
+            ArrowLeft: "ArrowRight",
+            across: "down",
+            down: "across",
+        }[prop] as T;
+    },
 
-    if (index !== undefined) {
-      return {
-        ...cursor,
-        index,
-      };
-    }
+    increment(size: number, prop: Orientation | Direction) {
+        return {
+            ArrowUp: -size,
+            ArrowRight: 1,
+            ArrowDown: size,
+            ArrowLeft: -1,
+            across: 1,
+            down: size,
+        }[prop];
+    },
 
-    return cursor;
-  });
+    forward(orientation: Orientation): Direction {
+        return {
+            across: "ArrowRight",
+            down: "ArrowDown",
+        }[orientation] as Direction;
+    },
+
+    backward(orientation: Orientation): Direction {
+        return {
+            across: "ArrowLeft",
+            down: "ArrowUp",
+        }[orientation] as Direction;
+    },
+
+    x(size: number, index: number) {
+        return index % size;
+    },
+
+    y(size: number, index: number) {
+        return Math.floor(index / size);
+    },
+
+    coordinates(size: number, index: number) {
+        return [this.x(size, index), this.y(size, index)];
+    },
+
+    atBoundary(size: number, index: number, direction: Direction) {
+        const x = () => this.x(size, index);
+        const y = () => this.y(size, index);
+
+        return {
+            ArrowLeft: () => x() <= 0,
+            ArrowUp: () => y() <= 0,
+            ArrowRight: () => x() >= size - 1,
+            ArrowDown: () => y() >= size - 1,
+        }[direction]();
+    },
 }
-
-export type Direction = "ArrowUp" | "ArrowRight" | "ArrowDown" | "ArrowLeft";
-
-export class Cursor {
-  static orientation(direction: Direction): Orientation {
-    return {
-      ArrowRight: "across",
-      ArrowUp: "down",
-      ArrowDown: "down",
-      ArrowLeft: "across",
-    }[direction] as Orientation;
-  }
-
-  static opposite<T extends Orientation | Direction>(prop: T): T {
-    return {
-      ArrowUp: "ArrowDown",
-      ArrowRight: "ArrowLeft",
-      ArrowDown: "ArrowUp",
-      ArrowLeft: "ArrowRight",
-      across: "down",
-      down: "across",
-    }[prop] as T;
-  }
-
-  static increment(size: number, prop: Orientation | Direction) {
-    return {
-      ArrowUp: -size,
-      ArrowRight: 1,
-      ArrowDown: size,
-      ArrowLeft: -1,
-      across: 1,
-      down: size,
-    }[prop];
-  }
-
-  static forward(orientation: Orientation): Direction {
-    return {
-      across: "ArrowRight",
-      down: "ArrowDown",
-    }[orientation] as Direction;
-  }
-
-  static backward(orientation: Orientation): Direction {
-    return {
-      across: "ArrowLeft",
-      down: "ArrowUp",
-    }[orientation] as Direction;
-  }
-
-  static x(size: number, index: number) {
-    return index % size;
-  }
-
-  static y(size: number, index: number) {
-    return Math.floor(index / size);
-  }
-
-  static coordinates(size: number, index: number) {
-    return [this.x(size, index), this.y(size, index)];
-  }
-
-  static atBoundary(size: number, index: number, direction: Direction) {
-    const x = () => this.x(size, index);
-    const y = () => this.y(size, index);
-
-    return {
-      ArrowLeft: () => x() <= 0,
-      ArrowUp: () => y() <= 0,
-      ArrowRight: () => x() >= size - 1,
-      ArrowDown: () => y() >= size - 1,
-    }[direction]();
-  }
-}
-
-export const cursor = {
-  subscribe: store.subscribe,
-  move,
-  setIndex,
-  toggleOrientation,
-  setOrientation,
-  goToFirstEmptySquare,
-  goToNextEmptySquare,
-  initialize,
-};
